@@ -1,29 +1,50 @@
 <template>
   <div class="profile-page">
-    <NuxtLink to="/" class="back-button">
-      BACK
-    </NuxtLink>
-
+    <NuxtLink to="/" class="back-button">BACK</NuxtLink>
 
     <div class="main-content">
       <div class="profile-header">
         <div class="profile-picture-container">
           <label for="profile-picture-upload" class="profile-picture-label">
-            <img :src="profile.profile_picture || 'https://via.placeholder.com/150/000000/FFFFFF/?text=No+Image'" alt="Profile Picture" class="profile-picture" />
-            <input type="file" id="profile-picture-upload" @change="uploadProfilePicture" style="display: none;" />
+            <img
+              :src="currentProfilePicture || 'https://via.placeholder.com/150/000000/FFFFFF/?text=No+Image'"
+              alt="Profile Picture"
+              class="profile-picture"
+            />
+            <input
+              type="file"
+              id="profile-picture-upload"
+              @change="uploadProfilePicture"
+              style="display: none;"
+            />
           </label>
+          <!-- Navigation buttons below the image -->
+          <div class="nav-buttons">
+            <button @click="prevPicture" class="nav-button">❮</button>
+            <button @click="nextPicture" class="nav-button">❯</button>
+          </div>
         </div>
         <div class="user-info">
           <h2>
-            <input v-if="editMode" v-model="profile.userName" />
-            <span v-else>{{ profile.userName }}</span>
-            <button @click="toggleEditMode" class="edit-button">
-              {{ editMode ? 'Cancel' : 'Edit' }}
-            </button>
-            <button v-if="editMode" @click="saveProfile" class="save-button">Save</button>
+            <span>{{ profile.userName }}</span>
           </h2>
-          <p v-if="!editMode">{{ profile.userBio }}</p>
-          <textarea v-else v-model="profile.userBio" placeholder="Enter your bio"></textarea>
+          
+          <div class="bio-container">
+            <p v-if="!editMode">{{ profile.userBio }}</p>
+            <input
+              v-if="editMode"
+              type="text"
+              v-model="profile.userBio"
+              placeholder="Enter your bio"
+              class="bio-input"
+            />
+            <button class="edit-button" @click="toggleEditMode">
+              <i class="fa fa-pencil"></i> Edit Bio
+            </button>
+          </div>
+
+          <hr class="separator" />
+          <p>Name: {{ profile.name }}</p>
           <p>Email: {{ profile.userEmail }}</p>
           <p>Country: {{ profile.userCountry }}</p>
           <p>Looking for: {{ profile.userLookingFor }}</p>
@@ -31,15 +52,24 @@
         </div>
       </div>
       <div class="destinations-container">
-        <h3>Your Destinations</h3>
-        <div class="toggle-destinations" @click="toggleDestinationsMenu">
-          <span>{{ isDestinationsMenuOpen ? '✔' : '➕' }} Destinations</span>
-        </div>
+        <h3 class="visited-title">Visited Destinations</h3>
+        <hr class="visited-separator" />
+        <ul class="visited-destinations">
+          <li v-for="destination in selectedDestinations" :key="destination">
+            {{ destination }}
+          </li>
+        </ul>
+        <button class="add-button" @click="toggleDestinationsMenu">+</button>
         <transition name="slide-down">
           <ul v-if="isDestinationsMenuOpen" class="destinations-menu">
             <li v-for="destination in destinations" :key="destination">
               <label>
-                <input type="checkbox" v-model="selectedDestinations" :value="destination" @change="updatePlacesVisited" />
+                <input
+                  type="checkbox"
+                  v-model="selectedDestinations"
+                  :value="destination"
+                  @change="updatePlacesVisited"
+                />
                 {{ destination }}
               </label>
             </li>
@@ -65,112 +95,194 @@
     </div>
   </div>
 </template>
+
+
 <script setup>
-
-const data=useAuth()
-
-console.log(data.data)
-
-const id=data.data.value.user.id
+const { data, token } = useAuth();
 
 const profile = ref({
   userName: '',
+  Name: '',
   userBio: '',
   userEmail: '',
   userCountry: '',
   userLookingFor: '',
-  profile_picture: ''
-})
+});
 
-const editMode = ref(false)
-const currentDay = ref(0)
-const diaryEntries = ref(['даъ1', 'даъ2', 'даъ3', 'даъ4'])
-const diaryDays = ['Day 1', 'Day 2', 'Day 3', 'Day 4']
-const isDestinationsMenuOpen = ref(false)
-const destinations = ref(['Sagrada Familia', 'Park Güell', 'Casa Batlló', 'La Rambla'])
-const selectedDestinations = ref([])
-const placesVisited = ref(0)
+const profile_pictures = ref([]);
 
-const token = data.data.value.user.access
-const { data: userProfile, error } = await useAsyncData('userProfile', () =>
-  $fetch(`http://localhost:8000/api/profile/${id}/`, {
+const currentPictureIndex = ref(0); 
+const editMode = ref(false);
+const currentDay = ref(0);
+const diaryDays = ['Day 1', 'Day 2', 'Day 3', 'Day 4'];
+
+const isDestinationsMenuOpen = ref(false);
+const destinations = ref(['Sagrada Familia', 'Park Güell', 'Casa Batlló', 'La Rambla']);
+const selectedDestinations = ref([]);
+const placesVisited = ref(0);
+
+//User profile info --------
+const userProfile = await useAsyncData('userProfile', () =>
+  $fetch(`http://localhost:8000/api/profile/${data.value.id}/`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${token}`,  
+      'Authorization': `${token.value}`,
       'Content-Type': 'application/json',
-    },  
+    }
   })
 );
 
-console.log("User Profile:", userProfile.value);
-console.log("Error:", error.value);
-
 profile.value = {
-    userName: "",
-    userBio: userProfile.value.bio || '',
-    userEmail: '', 
-    userCountry: userProfile.value.country || '',
-    userLookingFor: userProfile.value.looking_for || '',
-    profile_picture: userProfile.value.profile_picture || null,
-  };
+  userName: data.value.username,
+  name: `${data.value.first_name} ${data.value.last_name}`,
+  userBio: userProfile.data.value.bio || '',
+  userEmail: '',
+  userCountry: userProfile.data.value.country || '',
+  userLookingFor: userProfile.data.value.looking_for || '',
+};
 
-
-diaryEntries.value=[userProfile.value.diary_day_1,userProfile.value.diary_day_2,userProfile.value.diary_day_3,userProfile.value.diary_day_4]
-
-console.log("User Profile:", userProfile.value);
-
-const toggleEditMode = () => {
-  editMode.value = !editMode.value
-}
-
-const saveProfile = async () => {
-  try {
-    await $fetch(`/api/profile/${user?.id}`, {
-      method: 'PUT',
-      body: profile.value,
-    })
-    editMode.value = false
-  } catch (error) {
-    console.error('Failed to save profile:', error)
-  }
-}
-
-const toggleDestinationsMenu = () => {
-  isDestinationsMenuOpen.value = !isDestinationsMenuOpen.value
-}
-
-const setCurrentDay = (dayIndex) => {
-  currentDay.value = dayIndex
-}
-
-const updatePlacesVisited = () => {
-  placesVisited.value = selectedDestinations.value.length
-}
+const diaryEntries = [
+  userProfile.data.value.diary_day_1,
+  userProfile.data.value.diary_day_2,
+  userProfile.data.value.diary_day_3,
+  userProfile.data.value.diary_day_4
+];
 
 const saveDiaryEntry = () => {
-  console.log('Diary entry saved:', diaryEntries.value[currentDay.value])
+  console.log('Diary entry saved:', diaryEntries.value[currentDay.value]);
+};
+
+//Profile Pictures--------
+const config = useRuntimeConfig();
+const Base = config.public.apiBase;
+const { data: profilePicturesData, error } = await useAsyncData('profilePictures', () =>
+  $fetch(`http://localhost:8000/api/profile/upload/${data.value.id}/`, {
+    headers: {
+      'Authorization': `${token.value}`,
+    },
+  })
+);
+if (error.value) {
+  console.error('Failed to fetch profile pictures:', error.value);
+} else {
+  profile_pictures.value = profilePicturesData.value.profile_pictures.map(pic => `${Base}${pic}`);
+  currentPictureIndex.value = 0; 
 }
 
 const uploadProfilePicture = async (event) => {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    const formData = new FormData()
-    formData.append('profile_picture', file)
+    const formData = new FormData();
+    formData.append('profile_picture', file);
 
     try {
-      const response = await $fetch(`/api/profile/${user?.id}/upload/`, {
+
+      await $fetch(`http://localhost:8000/api/profile/upload/${data.value.id}/`, {
         method: 'POST',
         body: formData,
-      })
-      profile.value.profile_picture = response.profile_picture
+        headers: {
+          'Authorization': `${token.value}`, 
+        },
+      });
+ 
     } catch (error) {
-      console.error('Failed to upload profile picture:', error)
+      console.error('Failed to upload profile picture:', error);
     }
   }
-}
+};
+
+const nextPicture = () => {
+  if (profile_pictures.value.length > 0) {
+    currentPictureIndex.value = (currentPictureIndex.value + 1) % profile_pictures.value.length;
+  }
+};
+
+const prevPicture = () => {
+  if (profile_pictures.value.length > 0) {
+    currentPictureIndex.value = (currentPictureIndex.value - 1 + profile_pictures.value.length) % profile_pictures.value.length;
+  }
+};
+
+const currentProfilePicture = computed(() => {
+  return profile_pictures.value[currentPictureIndex.value] || '';
+});
+
+
+const toggleEditMode = () => {
+  editMode.value = !editMode.value;
+};
+
+const toggleDestinationsMenu = () => {
+  isDestinationsMenuOpen.value = !isDestinationsMenuOpen.value;
+};
+
+const setCurrentDay = (dayIndex) => {
+  currentDay.value = dayIndex;
+};
+
+const updatePlacesVisited = () => {
+  placesVisited.value = selectedDestinations.value.length;
+};
+
+
+
 </script>
 
 <style scoped>
+
+.nav-buttons {
+  display: flex; 
+  justify-content: center; 
+  margin-top:0px; 
+}
+
+.nav-button {
+  background-color: #ff9d00;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin: 0 5px;
+}
+
+.nav-button:hover {
+  background-color: #cc5200; 
+}
+.bio-input {
+  flex-grow: 1;
+  border: none;
+  outline: none; 
+  padding: 5px; 
+  font-size: 19px; 
+}
+
+.bio-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edit-button {
+  background-color: #ff9d00; 
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.edit-button i {
+  margin-right: 5px; 
+}
+
+.separator {
+  border: 1px solid #ff9d00;
+  margin: 10px 0;
+}
+
 .profile-page {
   padding: 20px;
   display: flex;
@@ -222,10 +334,12 @@ const uploadProfilePicture = async (event) => {
 }
 
 .profile-picture {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
+  width: 400px; 
+  height: 450px; 
+  object-fit: contain;
+
 }
+
 
 .user-info {
   display: flex;
@@ -240,37 +354,61 @@ const uploadProfilePicture = async (event) => {
   font-size: 28px;
 }
 
-.user-info p,
-.user-info textarea {
+.user-info p {
   margin: 5px 0;
   font-size: 20px;
 }
 
 .destinations-container {
-  width: 25%; 
-  margin-left: 20px;
-  margin-bottom: 20px;
+  margin: 0 200px 20px 10px; 
 }
 
-.destinations-container h3 {
-  font-size: 24px;
-  margin-bottom: 10px;
+.visited-title {
+  color: #ff9d00; 
+  font-size: 24px; 
+  margin: 0; 
 }
 
-.toggle-destinations {
+.visited-separator {
+  border: 1px solid #ff9d00; 
+  margin: 10px 0;
+}
+
+.visited-destinations {
+  list-style-type: none;
+  padding: 0; 
+  margin: 10px 0; 
+}
+
+.visited-destinations li {
+  margin-bottom: 5px; 
+  font-size: 18px; 
+}
+
+.add-button {
+  background-color: #ff9d00; 
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
   cursor: pointer;
-  font-weight: bold;
-  margin-bottom: 10px;
+  font-size: 16px;
+  margin-top: 10px; 
+}
+
+.add-button:hover {
+  background-color: #cc5200; 
 }
 
 .destinations-menu {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.destinations-menu li {
-  margin-bottom: 10px;
+  max-height: 200px; 
+  overflow-y: auto; 
+  transition: max-height 0.5s ease; 
+  padding: 0; 
+  margin: 0; 
+  list-style: none; 
+  background: white; 
+  border: 1px solid #ccc; 
 }
 
 .slide-down-enter-active,

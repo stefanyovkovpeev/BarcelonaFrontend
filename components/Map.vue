@@ -1,4 +1,5 @@
 <template>
+   <!-- Pam app became paid, I will embed a new one  -->
   <MapNavbar />
   <MapChatBot />
   <MapDaysMenu />

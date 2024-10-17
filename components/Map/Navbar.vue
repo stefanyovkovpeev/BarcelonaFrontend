@@ -22,7 +22,6 @@
   </template>
   
   <script setup>
-  import { ref, onMounted } from 'vue'
   
   const { signOut } = useAuth()
   const isTopMenuOpen = ref(true)
@@ -155,7 +154,7 @@
   background-color: #cc5200;
 }
   
-  /* Profile Icon Style */
+
   .profile-icon-container {
     display: flex;
     align-items: center;
@@ -177,7 +176,6 @@
   }
 
 
-/* Transition Animation */
 .slide-down-enter-active, .slide-down-leave-active {
   transition: transform 0.5s ease, opacity 1s ease;
 }

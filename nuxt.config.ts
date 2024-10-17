@@ -1,35 +1,56 @@
 export default defineNuxtConfig({
+  compatibilityDate: '2024-10-15',
   runtimeConfig: {
     public: {
-      apiBase: '/api/auth',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE, 
     },
-    privateKey: process.env.AUTH_SECRET,
+    private: {
+      apiSecret: process.env.NUXT_API_SECRET, 
+    },
   },
-  plugins: [
-    '~/plugins/auth-fetch.client.js', 
-  ],
-
-  modules: [
-    '@nuxtjs/tailwindcss',
-    '@sidebase/nuxt-auth',
-  ],
-
+  modules: ['@sidebase/nuxt-auth'],
+  build: {
+    transpile: ['jsonwebtoken']
+  },
   auth: {
-    // Configuration for '@sidebase/nuxt-auth' should go here
     provider: {
-      type: 'authjs',
+      type: 'local',
+      endpoints: {
+        getSession: { path: '/user' }
+      },
+      pages: {
+        login: '/login'
+      },
+      token: {
+        signInResponseTokenPointer: '/token/accessToken'
+      },
+      session: {
+        dataType: { id: 'string', email: 'string', name: 'string', role: '\'admin\' | \'guest\' | \'account\'', subscriptions: '{ id: number, status: \'ACTIVE\' | \'INACTIVE\' }[]' },
+        dataResponsePointer: '/'
+      },
+      refresh: {
+        isEnabled: process.env.NUXT_AUTH_REFRESH_ENABLED !== 'false',
+        endpoint: { path: '/refresh', method: 'post' },
+        token: {
+          signInResponseRefreshTokenPointer: '/token/refreshToken',
+          refreshRequestTokenPointer: '/refreshToken'
+        },
+      }
     },
-    globalAppMiddleware: true,
-    baseURL: `http://localhost:${process.env.PORT || 3000}`,
+    sessionRefresh: {
+      enableOnWindowFocus: false,
+      enablePeriodically:false ,
+    },
+    globalAppMiddleware: {
+      isEnabled: true
+    }
   },
-
   routeRules: {
     '/with-caching': {
       swr: 86400000,
       auth: {
-        disableServerSideAuth: false,
-      },
-    },
-  },
-  compatibilityDate: '2024-10-05',
-});
+        disableServerSideAuth: true
+      }
+    }
+  }
+})
