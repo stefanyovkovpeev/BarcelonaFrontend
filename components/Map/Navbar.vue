@@ -23,12 +23,12 @@
   
   <script setup>
   
-  const { signOut } = useAuth()
+  const { signOut,token } = useAuth()
   const isTopMenuOpen = ref(true)
   const time = ref('')
   const date = ref('')
   const weekday = ref('')
-  const weather = ref('Sunny, 25°C')
+  const weather = ref("")
   
   const updateClock = () => {
     const dateObj = new Date()
@@ -41,6 +41,27 @@
     weekday.value = dateObj.toLocaleDateString(undefined, weekdayOptions)
   }
   
+
+  const fetchWeather = async () => {
+  try {
+    const response = await $fetch('http://localhost:8000/api/weather/', {
+      method: 'GET',
+      headers: {
+        'Authorization': token.value,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    console.log(response.weather)
+    let roundedTemp = Math.round(response.main.temp);
+    weather.value = `${response.weather[0].main}, ${roundedTemp}°C`
+  } catch (error) {
+    console.error('Error fetching weather:', error)
+    weather.value = 'Failed to fetch weather data'
+  }
+}
+
+
   const toggleTopMenu = () => {
     isTopMenuOpen.value = !isTopMenuOpen.value
   }
@@ -57,6 +78,7 @@
   onMounted(() => {
     updateClock()
     setInterval(updateClock, 1000)
+    fetchWeather()
   })
   </script>
   

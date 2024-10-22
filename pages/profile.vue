@@ -18,7 +18,9 @@
               style="display: none;"
             />
           </label>
-          <!-- Navigation buttons below the image -->
+          
+          
+
           <div class="nav-buttons">
             <button @click="prevPicture" class="nav-button">❮</button>
             <button @click="nextPicture" class="nav-button">❯</button>
@@ -38,8 +40,9 @@
               placeholder="Enter your bio"
               class="bio-input"
             />
-            <button class="edit-button" @click="toggleEditMode">
-              <i class="fa fa-pencil"></i> Edit Bio
+            <button @click="toggleEditMode" class="edit-button">
+             <i class="fa" :class="editMode ? 'fa-check' : 'fa-pencil'"></i> 
+            {{ editMode ? 'Save Bio' : 'Edit Bio' }}
             </button>
           </div>
 
@@ -51,48 +54,9 @@
           <p>Barcelona places visited: {{ placesVisited }}/{{ destinations.length }}</p>
         </div>
       </div>
-      <div class="destinations-container">
-        <h3 class="visited-title">Visited Destinations</h3>
-        <hr class="visited-separator" />
-        <ul class="visited-destinations">
-          <li v-for="destination in selectedDestinations" :key="destination">
-            {{ destination }}
-          </li>
-        </ul>
-        <button class="add-button" @click="toggleDestinationsMenu">+</button>
-        <transition name="slide-down">
-          <ul v-if="isDestinationsMenuOpen" class="destinations-menu">
-            <li v-for="destination in destinations" :key="destination">
-              <label>
-                <input
-                  type="checkbox"
-                  v-model="selectedDestinations"
-                  :value="destination"
-                  @change="updatePlacesVisited"
-                />
-                {{ destination }}
-              </label>
-            </li>
-          </ul>
-        </transition>
-      </div>
+      <ProfileDestinationsVisited/>
     </div>
-
-    <div class="diary-section">
-      <h3>Diary</h3>
-      <div class="diary-tabs">
-        <button
-          v-for="(day, index) in diaryDays"
-          :key="index"
-          :class="{'active': currentDay === index}"
-          @click="setCurrentDay(index)"
-        >
-          {{ day }}
-        </button>
-      </div>
-      <textarea v-model="diaryEntries[currentDay]" placeholder="Write about your day in Barcelona..."></textarea>
-      <button @click="saveDiaryEntry">Save</button>
-    </div>
+   <ProfileDiarySection/>
   </div>
 </template>
 
@@ -100,6 +64,11 @@
 <script setup>
 const { data, token } = useAuth();
 
+const destinations = useState('destinations', () => ['Sagrada Familia', 'Park Güell', 'Casa Batlló', 'La Rambla'])
+
+
+
+//User profile info --------
 const profile = ref({
   userName: '',
   Name: '',
@@ -109,28 +78,22 @@ const profile = ref({
   userLookingFor: '',
 });
 
-const profile_pictures = ref([]);
-
-const currentPictureIndex = ref(0); 
-const editMode = ref(false);
-const currentDay = ref(0);
-const diaryDays = ['Day 1', 'Day 2', 'Day 3', 'Day 4'];
-
-const isDestinationsMenuOpen = ref(false);
-const destinations = ref(['Sagrada Familia', 'Park Güell', 'Casa Batlló', 'La Rambla']);
-const selectedDestinations = ref([]);
-const placesVisited = ref(0);
-
-//User profile info --------
 const userProfile = await useAsyncData('userProfile', () =>
   $fetch(`http://localhost:8000/api/profile/${data.value.id}/`, {
     method: 'GET',
     headers: {
-      'Authorization': `${token.value}`,
+      'Authorization':token.value,
       'Content-Type': 'application/json',
     }
   })
 );
+    //Usstate for another component
+const diaryEntries = useState('diaryEntries', () =>[
+  userProfile.data.value.diary_day_1,
+  userProfile.data.value.diary_day_2,
+  userProfile.data.value.diary_day_3,
+  userProfile.data.value.diary_day_4
+]);
 
 profile.value = {
   userName: data.value.username,
@@ -141,20 +104,40 @@ profile.value = {
   userLookingFor: userProfile.data.value.looking_for || '',
 };
 
-const diaryEntries = [
-  userProfile.data.value.diary_day_1,
-  userProfile.data.value.diary_day_2,
-  userProfile.data.value.diary_day_3,
-  userProfile.data.value.diary_day_4
-];
+const currentPictureIndex = ref(0); 
 
-const saveDiaryEntry = () => {
-  console.log('Diary entry saved:', diaryEntries.value[currentDay.value]);
+
+const editMode = ref(false);
+const toggleEditMode = async () => {
+  if (editMode.value) {
+    try {
+      const response = await $fetch(`http://localhost:8000/api/profile/${data.value.id}/`, {
+        method: 'PATCH',
+        body: { bio: profile.value.userBio }, 
+        headers: {
+          'Authorization': `${token.value}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Bio updated:', response);
+    } catch (error) {
+      console.error('Failed to update bio:', error);
+    }
+  }
+  editMode.value = !editMode.value; 
 };
+
+
+const placesVisited =  useState('placesVisited')
+
+
+
 
 //Profile Pictures--------
 const config = useRuntimeConfig();
 const Base = config.public.apiBase;
+const profile_pictures = ref([]);
 const { data: profilePicturesData, error } = await useAsyncData('profilePictures', () =>
   $fetch(`http://localhost:8000/api/profile/upload/${data.value.id}/`, {
     headers: {
@@ -207,22 +190,6 @@ const currentProfilePicture = computed(() => {
   return profile_pictures.value[currentPictureIndex.value] || '';
 });
 
-
-const toggleEditMode = () => {
-  editMode.value = !editMode.value;
-};
-
-const toggleDestinationsMenu = () => {
-  isDestinationsMenuOpen.value = !isDestinationsMenuOpen.value;
-};
-
-const setCurrentDay = (dayIndex) => {
-  currentDay.value = dayIndex;
-};
-
-const updatePlacesVisited = () => {
-  placesVisited.value = selectedDestinations.value.length;
-};
 
 
 
@@ -344,8 +311,9 @@ const updatePlacesVisited = () => {
 .user-info {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  
   margin-left: 20px;
+  margin-top: 0px;
   flex-grow: 1;
 }
 
@@ -359,123 +327,4 @@ const updatePlacesVisited = () => {
   font-size: 20px;
 }
 
-.destinations-container {
-  margin: 0 200px 20px 10px; 
-}
-
-.visited-title {
-  color: #ff9d00; 
-  font-size: 24px; 
-  margin: 0; 
-}
-
-.visited-separator {
-  border: 1px solid #ff9d00; 
-  margin: 10px 0;
-}
-
-.visited-destinations {
-  list-style-type: none;
-  padding: 0; 
-  margin: 10px 0; 
-}
-
-.visited-destinations li {
-  margin-bottom: 5px; 
-  font-size: 18px; 
-}
-
-.add-button {
-  background-color: #ff9d00; 
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 16px;
-  margin-top: 10px; 
-}
-
-.add-button:hover {
-  background-color: #cc5200; 
-}
-
-.destinations-menu {
-  max-height: 200px; 
-  overflow-y: auto; 
-  transition: max-height 0.5s ease; 
-  padding: 0; 
-  margin: 0; 
-  list-style: none; 
-  background: white; 
-  border: 1px solid #ccc; 
-}
-
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: max-height 0.5s ease;
-}
-
-.slide-down-enter,
-.slide-down-leave-to {
-  max-height: 0;
-  overflow: hidden;
-}
-
-.diary-section {
-  width: 100%;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 20px;
-}
-
-.diary-section h3 {
-  margin-bottom: 10px;
-  font-size: 24px;
-}
-
-.diary-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.diary-tabs button {
-  padding: 10px;
-  background-color: #ff9d00;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.diary-tabs button.active {
-  background-color: #cc5200;
-}
-
-.diary-section textarea {
-  width: 100%;
-  height: 200px;
-  margin-bottom: 10px;
-  padding: 15px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 18px;
-  box-sizing: border-box;
-}
-
-.diary-section button {
-  align-self: flex-end;
-  padding: 10px 20px;
-  background-color: #ff9d00;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.diary-section button:hover {
-  background-color: #cc5200;
-}
 </style>
