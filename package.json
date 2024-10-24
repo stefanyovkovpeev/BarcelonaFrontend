@@ -1,0 +1,42 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "NODE_ENV=production node .output/server/index.mjs",
+    "typecheck": "nuxt typecheck",
+    "lint:fix": "eslint . --fix",
+    "lint": "oxlint --deny-warnings -D correctness -D suspicious -D perf && eslint --max-warnings 0 .",
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.6.0",
+    "@fortawesome/free-solid-svg-icons": "^6.6.0",
+    "@fortawesome/vue-fontawesome": "^3.0.8",
+    "@nuxt/kit": "^3.13.2",
+    "agentkeepalive": "^4.5.0",
+    "defu": "^6.1.4",
+    "jsonwebtoken": "^9.0.2",
+    "nuxt": "^3.12.2",
+    "vue": "^3.4.29",
+    "vue-router": "^4.3.3"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^2.11.5",
+    "@nuxtjs/tailwindcss": "^6.11.4",
+    "@sidebase/nuxt-auth": "^0.9.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.11.30",
+    "eslint": "^8.57.0",
+    "oxlint": "^0.2.15",
+    "typescript": "^5.4.3",
+    "vue-tsc": "^2.0.7"
+  },
+  "peerDependencies": {
+    "next-auth": "^4.21.1"
+  }
+}
