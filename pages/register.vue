@@ -98,6 +98,8 @@ definePageMeta({
   display: flex;
   justify-content: center;
   align-items: center;
+  background: url('/media/barcelona.png') no-repeat center center;
+  background-size: cover;
   background-color: rgb(255, 254, 254); 
 }
 

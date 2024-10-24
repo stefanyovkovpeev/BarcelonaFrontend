@@ -15,7 +15,6 @@
           <div 
             v-if="tooltipVisible && tooltipIndex === index" 
             class="tooltip" 
-            :style="{ top: mouseY + 'px', left: mouseX + 'px' }"
           >
             <p> {{ getVisitTime(destination) }}</p>
             <p> {{ getReview(destination) }}</p>
@@ -28,17 +27,20 @@
     </button>
     <transition name="slide-down">
       <div v-if="isDestinationsMenuOpen" class="destinations-menu">
-        <ul v-if="!selectedForReview">
-          <li v-for="destination in destinations" :key="destination">
-            <label>
-              <input
-                type="checkbox"
-                v-model="selectedDestination"
-                :value="destination"
-                @change="prepareReview(destination)"
-              />
-              {{ destination }}
-            </label>
+        <input 
+          type="text" 
+          v-model="searchTerm" 
+          class="search-input" 
+          placeholder="Search destinations..." 
+        />
+        <ul v-if="searchTerm.length >= 3 && filteredDestinations.length && !selectedForReview">
+          <li 
+            v-for="destination in filteredDestinations" 
+            :key="destination"
+            @click="prepareReview(destination)"
+            class="suggestion-item"
+          >
+            {{ destination }}
           </li>
         </ul>
         <div v-if="selectedForReview" class="review-form">
@@ -62,7 +64,9 @@ const selectedForReview = ref(false);
 const newReview = ref("");
 const tooltipVisible = ref(false);
 const tooltipIndex = ref(null);
+const searchTerm = ref("");
 
+const destinationsFullListForMapping=useState('destinationsFullList')
 
 const destinationsVisited = await useAsyncData('destinationsVisited', () =>
   $fetch(`http://localhost:8000/api/profile/profilevisits/${data.value.id}/`, {
@@ -73,6 +77,7 @@ const destinationsVisited = await useAsyncData('destinationsVisited', () =>
     }
   })
 );
+
 if (destinationsVisited.data.value) {
   selectedDestinations.value = destinationsVisited.data.value.map(visit => visit.destination_name);
 }
@@ -98,13 +103,22 @@ const toggleDestinationsMenu = () => {
   }
 };
 
+const filteredDestinations = computed(() => {
+  return destinations.value.filter(destination => 
+    destination.toLowerCase().includes(searchTerm.value.toLowerCase())
+  );
+});
 
+const destinationToReview=ref([])
 const prepareReview = (destination) => {
   selectedDestination.value = destination;
   selectedForReview.value = true;
+  destinationToReview.value = destinationsFullListForMapping.value.find(visit => visit.destination === destination);
+
 };
 
 const submitReview = async () => {
+  console.log('id of dest',destinationToReview.value.destination)
   if (selectedDestination.value && newReview.value) {
     try {
       const response = await $fetch(`http://localhost:8000/api/profile/profilevisits/${data.value.id}/`, {
@@ -114,7 +128,7 @@ const submitReview = async () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          destination: 11,
+          destination: destinationToReview.value.id,
           review: newReview.value,
         }),
       });
@@ -143,6 +157,32 @@ const getVisitTime = (destination) => {
 </script>
 
 <style scoped>
+.suggestion-item {
+  padding: 10px;
+  margin: 0;
+  cursor: pointer;
+  background-color: #ff9d00; 
+  transition: background-color 0.3s ease;
+}
+
+.suggestion-item:hover {
+  background-color: #f9b233; 
+}
+.search-input {
+  width: 90%;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.visited-title {
+  font-size: 1.5rem;
+  color: #333;
+  text-align: center;
+  margin-bottom: 10px;
+}
 .destinations-container {
   width: 100%;
   margin-top: 70px;

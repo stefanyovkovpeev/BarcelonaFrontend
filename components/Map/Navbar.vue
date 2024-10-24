@@ -1,5 +1,4 @@
 <template>
-    <!-- Top Navbar Component -->
     <transition name="slide-down" mode="out-in">
       <div v-if="isTopMenuOpen" class="top-navbar">
         <div class="time-profile-container">

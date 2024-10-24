@@ -49,7 +49,7 @@ definePageMeta({
   display: flex;
   align-items: center;
   justify-content: center;
-  /* background: url('/path-to-your-barcelona-image.jpg') no-repeat center center; */
+  background: url('/media/barcelona.png') no-repeat center center;
   background-size: cover;
 }
 

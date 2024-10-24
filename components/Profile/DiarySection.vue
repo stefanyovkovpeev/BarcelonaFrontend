@@ -29,13 +29,14 @@ const setCurrentDay = (dayIndex) => {
 };
 
 const saveDiaryEntry = async () => {
-  const diaryData = {
-    diary_day_1: diaryEntries[0],
-    diary_day_2: diaryEntries[1],
-    diary_day_3: diaryEntries[2],
-    diary_day_4: diaryEntries[3],
-  };
 
+  console.log(diaryEntries)
+  const diaryData = {
+    diary_day_1: diaryEntries.value[0],
+    diary_day_2: diaryEntries.value[1],
+    diary_day_3: diaryEntries.value[2],
+    diary_day_4: diaryEntries.value[3],
+  };
   try {
     const response = await $fetch(`http://localhost:8000/api/profile/${data.value.id}/`, {
       method: 'PATCH',

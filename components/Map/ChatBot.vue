@@ -1,5 +1,4 @@
 <template>
-    <!-- Chatbox Component -->
     <div v-if="isChatOpen" class="chatbox-container">
       <div class="chat-messages">
         <div v-for="(msg, index) in messages" :key="index" class="chat-message">

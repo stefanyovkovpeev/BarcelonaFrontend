@@ -1,5 +1,4 @@
 <template>
-    <!-- Right Days Menu Component -->
     <transition name="slide-right">
         <div v-if="isDaysMenuOpen" class="days-menu">
     <NuxtLink to="Days/DayOne" class="menu-link">Day 1</NuxtLink>

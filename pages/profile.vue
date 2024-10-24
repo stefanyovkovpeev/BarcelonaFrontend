@@ -64,9 +64,22 @@
 <script setup>
 const { data, token } = useAuth();
 
-const destinations = useState('destinations', () => ['Sagrada Familia', 'Park Güell', 'Casa Batlló', 'La Rambla'])
+const { data: destinationsData } = await useAsyncData('destinations', () =>
+  $fetch('http://localhost:8000/api/profile/destinations/', {
+    method: 'GET',
+    headers: {
+      'Authorization':token.value,
+      'Content-Type': 'application/json',
+    }
+  })
+);
 
-
+const destinationsFullListForMapping=useState('destinationsFullList', () => 
+  destinationsData.value
+);
+const destinations = useState('destinations', () => 
+  destinationsData.value ? destinationsData.value.map((item) => item.destination) : []
+);
 
 //User profile info --------
 const profile = ref({
