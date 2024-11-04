@@ -67,7 +67,7 @@ const handleRegister = async () => {
   }
 
   try {
-    const response = await $fetch('/api/register', {
+    const response = await $fetch('http://localhost:8000//api/register/', {
       method: 'POST',
       body: registrationData,
     })
