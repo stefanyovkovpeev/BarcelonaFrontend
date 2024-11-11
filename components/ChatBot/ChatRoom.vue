@@ -23,15 +23,6 @@
       </div>
     </div>
 
-    <div v-if="showingPreview" class="user-preview">
-      <img :src="previewUser.profilePicture" alt="Profile Picture" class="preview-picture" />
-      <p><strong>{{ previewUser.name }}</strong></p>
-      <p>{{ previewUser.bio }}</p>
-      <p>Location: {{ previewUser.location }}</p>
-      <p>Interests: {{ previewUser.interests.join(', ') }}</p>
-      <p>Last online: {{ previewUser.lastOnline }}</p>
-    </div>
-
     <div class="chat-input-container">
       <textarea
         class="chat-input"
@@ -44,8 +35,18 @@
       </button>
     </div>
   </div>
+
+  <div
+    v-if="showingPreview"
+    class="user-preview"
+    :style="{ top: previewPosition.top + 'px', left: previewPosition.left + 'px' }"
+  >
+    <img :src="previewPicture" alt="Profile Picture" class="preview-picture" />
+    <p>Country: {{ previewUser.country }}</p>
+    <p>Interests: {{ previewUser.looking_for }}</p>
+    <p>Bio: {{ previewUser.bio }}</p>
+  </div>
 </template>
-  
   <script setup>
   const { data, token } = useAuth();
 
@@ -56,8 +57,13 @@ const chatroomMessages = ref([]);
 const currentMessage = ref('');
 const chatMessagesRef = ref(null);
 const showingPreview = ref(false);
-const previewUser = ref({});
+const previewUser = ref();
 const previewPosition = ref();
+const previewPicture = ref('');
+
+
+const config = useRuntimeConfig();
+const Base = config.public.apiBase;
 
 
 const scrollToBottom = () => {
@@ -89,14 +95,12 @@ const { data: fetchedChatMessages, error } = await useAsyncData('chatmessages', 
 
 if (fetchedChatMessages.value) {
   chatroomMessages.value = fetchedChatMessages.value;
-  console.log('respo with messages',chatroomMessages)
 }
   
   const sendMessage = async () => {
   if (currentMessage.value.trim() === '') return;
 
   const userMessage = { user:currentUserId,content: currentMessage.value.trim(), sender: currentUser };
-  chatroomMessages.value.push(userMessage); 
 
   try {
     const response = await fetch('http://localhost:8000/api/chatroom/messages/', {
@@ -120,53 +124,103 @@ if (fetchedChatMessages.value) {
   currentMessage.value = ''
 };
 
-const showPreview = async (userId, event) => {
-  // const response = await fetch(`http://localhost:8000/api/user/${userId}/`, {
-  //   headers: { 'Authorization': token.value }
-  // });
-  // const data = await response.json();
-  console.log("Hovering over ID:", userId);  
-
-  previewUser.value = {
-    id: userId,
-    name: "Jane Doe",
-    bio: "Lover of travel and food",
-    profilePicture: "https://via.placeholder.com/150",
-    location: "Barcelona, Spain",
-    interests: ["Photography", "Hiking", "Music"],
-    lastOnline: "2 hours ago",
-  };
-  showingPreview.value = true;
-  console.log("Preview Data:", previewUser.value); 
-};
+async function getUserData(userId) {
+  try {
+    const userData = await $fetch(`http://localhost:8000/api/profile/${userId}/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `${token.value}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
 
-const hidePreview = () => {
+    const profilePicturesData = await $fetch(`http://localhost:8000/api/profile/upload/${userId}/`, {
+        headers: {
+          'Authorization': `${token.value}`,
+        },
+      });
+    
+    previewPicture.value = profilePicturesData.profile_pictures.length > 0 
+        ? `${Base}${profilePicturesData.profile_pictures[0]}` 
+        : ''; 
+
+
+    return userData;
+
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return null;
+  }
+}
+
+async function showPreview(userId, event) {
+  try {
+    const userData = await getUserData(userId);
+    console.log('showpreview',previewPicture.value)
+
+    
+    if (userData) {
+      previewUser.value = userData;
+    } else {
+      console.log('No user data found');
+    }
+
+    previewPosition.value = {
+      top: event.clientY - 140,
+      left: event.clientX - 301,
+    };
+
+    showingPreview.value = true;
+  } catch (error) {
+    console.error('Error displaying preview:', error);
+  }
+}
+
+function hidePreview() {
   showingPreview.value = false;
+}
+
+let socket;
+
+const connectWebSocket = () => {
+  socket = new WebSocket('ws://localhost:8000/ws/chatroom/messages/');
+
+
+  socket.onmessage = (event) => {
+    const newMessage = JSON.parse(event.data).message;
+    chatroomMessages.value.push(newMessage);
+    setTimeout(() => {
+    scrollToBottom();
+  }, 0);
+  };
+
+  socket.onerror = (error) => console.error('WebSocket error:', error);
+
 };
+
+onMounted(() => {
+  connectWebSocket();
+});
+
+onUnmounted(() => {
+  if (socket) {
+    socket.close(); 
+  }
+});
   </script>
   
   <style scoped>
 
 .user-preview {
   position: fixed;
-  top: 233px; 
-  left: 796px; 
-  background-color: white;
-  border: 1px solid #ccc;
-  padding: 10px;
+  width: 250px;
+  background-color: #fff;
+  border: 1px solid #ddd;
   border-radius: 5px;
+  padding: 10px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  width: 200px;
   z-index: 1000;
-  text-align: left;
-  font-size: 14px;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease-in-out;
-}
-
-.user-preview.visible {
-  transform: translateX(0);
 }
 
 .preview-picture {
@@ -192,6 +246,7 @@ const hidePreview = () => {
     display: flex;
     flex-direction: column;
     height: 100%;
+    
   }
   
   .chat-messages {

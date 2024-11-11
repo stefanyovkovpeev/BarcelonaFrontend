@@ -18,8 +18,6 @@
               style="display: none;"
             />
           </label>
-          
-          
 
           <div class="nav-buttons">
             <button @click="prevPicture" class="nav-button">❮</button>
@@ -30,7 +28,7 @@
           <h2>
             <span>{{ profile.userName }}</span>
           </h2>
-          
+
           <div class="bio-container">
             <p v-if="!editMode">{{ profile.userBio }}</p>
             <input
@@ -41,22 +39,46 @@
               class="bio-input"
             />
             <button @click="toggleEditMode" class="edit-button">
-             <i class="fa" :class="editMode ? 'fa-check' : 'fa-pencil'"></i> 
-            {{ editMode ? 'Save Bio' : 'Edit Bio' }}
+              <i class="fa" :class="editMode ? 'fa-check' : 'fa-pencil'"></i>
+              {{ editMode ? 'Save Profile' : 'Edit Profile' }}
             </button>
           </div>
 
           <hr class="separator" />
-          <p>Name: {{ profile.name }}</p>
+
+          <p>Name: {{ profile.userName }}</p>
           <p>Email: {{ profile.userEmail }}</p>
-          <p>Country: {{ profile.userCountry }}</p>
-          <p>Looking for: {{ profile.userLookingFor }}</p>
+
+          <!-- Editable Country Field -->
+          <div>
+            <p v-if="!editMode">Country: {{ profile.userCountry }}</p>
+            <input
+              v-if="editMode"
+              type="text"
+              v-model="profile.userCountry"
+              placeholder="Enter your country"
+              class="bio-input"
+            />
+          </div>
+
+          <!-- Editable Looking For Field -->
+          <div>
+            <p v-if="!editMode">Looking for: {{ profile.userLookingFor }}</p>
+            <input
+              v-if="editMode"
+              type="text"
+              v-model="profile.userLookingFor"
+              placeholder="Looking for..."
+              class="bio-input"
+            />
+          </div>
+
           <p>Barcelona places visited: {{ placesVisited }}/{{ destinations.length }}</p>
         </div>
       </div>
-      <ProfileDestinationsVisited/>
+      <ProfileDestinationsVisited />
     </div>
-   <ProfileDiarySection/>
+    <ProfileDiarySection />
   </div>
 </template>
 
@@ -100,21 +122,21 @@ const userProfile = await useAsyncData('userProfile', () =>
     }
   })
 );
-    //Usstate for another component
-const diaryEntries = useState('diaryEntries', () =>[
-  userProfile.data.value.diary_day_1,
-  userProfile.data.value.diary_day_2,
-  userProfile.data.value.diary_day_3,
-  userProfile.data.value.diary_day_4
+//Usstate for another component
+  const diaryEntries = useState('diaryEntries', () => [
+  userProfile.data.value?.diary_day_1 || '',
+  userProfile.data.value?.diary_day_2 || '',
+  userProfile.data.value?.diary_day_3 || '',
+  userProfile.data.value?.diary_day_4 || ''
 ]);
 
 profile.value = {
   userName: data.value.username,
   name: `${data.value.first_name} ${data.value.last_name}`,
-  userBio: userProfile.data.value.bio || '',
+  userBio: userProfile.data.value?.bio || '',
   userEmail: '',
-  userCountry: userProfile.data.value.country || '',
-  userLookingFor: userProfile.data.value.looking_for || '',
+  userCountry: userProfile.data.value?.country || '',
+  userLookingFor: userProfile.data.value?.looking_for || '',
 };
 
 const currentPictureIndex = ref(0); 
@@ -122,22 +144,30 @@ const currentPictureIndex = ref(0);
 
 const editMode = ref(false);
 const toggleEditMode = async () => {
+
   if (editMode.value) {
     try {
+      // Send a POST request regardless of profile existence
       const response = await $fetch(`http://localhost:8000/api/profile/${data.value.id}/`, {
-        method: 'PATCH',
-        body: { bio: profile.value.userBio }, 
+        method: 'POST',
+        body: { 
+          bio: profile.value.userBio || '',
+          country: profile.value.userCountry || '',
+          looking_for: profile.value.userLookingFor || ''
+        },
         headers: {
-          'Authorization': `${token.value}`,
+          'Authorization': token.value,
           'Content-Type': 'application/json',
         },
       });
+      
 
-      console.log('Bio updated:', response);
+
     } catch (error) {
-      console.error('Failed to update bio:', error);
+      console.error('Failed to update profile:', error);
     }
   }
+
   editMode.value = !editMode.value; 
 };
 
@@ -159,6 +189,7 @@ const { data: profilePicturesData, error } = await useAsyncData('profilePictures
   })
 );
 if (error.value) {
+  profilePicturesData.value=''
   console.error('Failed to fetch profile pictures:', error.value);
 } else {
   profile_pictures.value = profilePicturesData.value.profile_pictures.map(pic => `${Base}${pic}`);

@@ -30,7 +30,7 @@ const setCurrentDay = (dayIndex) => {
 
 const saveDiaryEntry = async () => {
 
-  console.log(diaryEntries)
+
   const diaryData = {
     diary_day_1: diaryEntries.value[0],
     diary_day_2: diaryEntries.value[1],
@@ -39,7 +39,7 @@ const saveDiaryEntry = async () => {
   };
   try {
     const response = await $fetch(`http://localhost:8000/api/profile/${data.value.id}/`, {
-      method: 'PATCH',
+      method: 'POST',
       body: diaryData,
       headers: {
         'Authorization': `${token.value}`,

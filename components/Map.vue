@@ -7,7 +7,7 @@
       loading="lazy"
       allowfullscreen
       referrerpolicy="no-referrer-when-downgrade"
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d11998.182441122033!2d2.15899!3d41.387917!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12a4a2f6d7fae4b7%3A0xd01111b0dd3fbebf!2sBarcelona!5e0!3m2!1sen!2ses!4v1698329597052!5m2!1sen!2ses">
+      src="https://www.google.com/maps/d/u/0/embed?mid=189iWyrXQnJVFv7cELlYP-glaeWaI_OE&ehbc=2E312F&noprof=1" >
     </iframe>
   </div>
   <MapNavbar />
