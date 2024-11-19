@@ -40,8 +40,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router'
 
 const username = ref('')
 const email = ref('')
@@ -49,7 +47,6 @@ const first_name = ref('')
 const last_name = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
-const router = useRouter()
 
 const handleRegister = async () => {
   if (password.value !== passwordConfirm.value) {
@@ -81,10 +78,6 @@ const handleRegister = async () => {
   } catch (error) {
     console.error('Registration failed:', error)
   }
-}
-
-const goBack = () => {
-  router.push('/login'); 
 }
 
 definePageMeta({

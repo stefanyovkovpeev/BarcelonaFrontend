@@ -1,10 +1,10 @@
 <template>
     <transition name="slide-right">
         <div v-if="isDaysMenuOpen" class="days-menu">
-    <NuxtLink to="Days/DayOne" class="menu-link">Day 1</NuxtLink>
-    <NuxtLink to="Days/DayTwo" class="menu-link">Day 2</NuxtLink>
-    <NuxtLink to="Days/DayThree" class="menu-link">Day 3</NuxtLink>
-    <NuxtLink to="Days/DayFour" class="menu-link">Day 4</NuxtLink>
+    <NuxtLink to="/" class="menu-link">Main Page</NuxtLink>
+    <NuxtLink to="/Days/DayOne/" class="menu-link">Day 1</NuxtLink>
+    <NuxtLink to="/Days/DayTwo/" class="menu-link">Day 2</NuxtLink>
+    <NuxtLink to="/Days/DayThree/" class="menu-link">Day 3</NuxtLink>
   </div>
     </transition>
     <div class="toggle-arrow-right" @click="toggleDaysMenu">

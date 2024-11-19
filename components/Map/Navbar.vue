@@ -2,7 +2,7 @@
     <transition name="slide-down" mode="out-in">
       <div v-if="isTopMenuOpen" class="top-navbar">
         <div class="time-profile-container">
-            <NuxtLink to="profile" class="profile-icon-container">
+            <NuxtLink to="/profile" class="profile-icon-container">
             <img src="https://img.icons8.com/ios-filled/50/ffffff/user-male-circle.png" alt="Profile Icon" />
           </NuxtLink>
           <div class="clock">{{ time }}</div>
@@ -15,9 +15,6 @@
         <button @click="logoutHandle" class="navbar-button exit-button">Exit</button>
       </div>
     </transition>
-    <div class="toggle-arrow-top" @click="toggleTopMenu">
-      <div class="arrow-top">{{ isTopMenuOpen ? '▲' : '▼' }}</div>
-    </div>
   </template>
   
   <script setup>
@@ -60,10 +57,6 @@
   }
 }
 
-
-  const toggleTopMenu = () => {
-    isTopMenuOpen.value = !isTopMenuOpen.value
-  }
   
   const logoutHandle = async () => {
     try {
@@ -75,22 +68,29 @@
   
   
   onMounted(() => {
-    updateClock()
-    setInterval(updateClock, 1000)
-    fetchWeather()
-  })
+  updateClock();
+
+  setInterval(updateClock, 1000);
+
+  fetchWeather();
+
+  setInterval(() => {
+    fetchWeather();
+  }, 5 * 60 * 1000);
+});
   </script>
   
   <style scoped>
   .top-navbar {
     position: absolute;
     top: 0;
-    left: 0;
+    right: 0;
     width: 100%;
-    background-color: rgba(50, 50, 50, 0.9);
+    height: 39px;
+    background-color: rgb(35, 35, 35);
     color: white;
     padding: 10px;
-    display: flex;
+    display: flex; 
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
@@ -149,40 +149,13 @@
     background-color: #cc5200;
   }
   
-  .toggle-arrow-top {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #ff6600;
-    color: white;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
-    z-index: 1001;
-  }
   
-  .arrow-top {
-    font-size: 24px;
-    transition: transform 0.3s ease;
-  }
-  .toggle-arrow-top:hover {
-  background-color: #cc5200;
-}
-  
-
   .profile-icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin-right: 200px;
-  }
+  position: relative; 
+  margin-left: 30px; 
+  margin-right: 200px; 
+  cursor: pointer;
+}
   
   .profile-icon-container img {
     width: 50px;
